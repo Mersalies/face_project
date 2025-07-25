@@ -6,8 +6,9 @@ from tqdm import tqdm
 import torch as th
 
 
-RAW_DIR = "raw_dataset"
-OUT_DIR = "processed_dataset"
+RAW_DIR = "archive/train"
+OUT_DIR = "processed_dataset/train"
+
 
 # Создаём выходную папку
 os.makedirs(OUT_DIR, exist_ok=True)
