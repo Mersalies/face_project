@@ -7,17 +7,17 @@ from torchvision import transforms
 
 from trip_data import TripletFaceDataset
 from loss import TripletLoss
-from models.face_model import Face_model
+from face_model import Face_model
 
 from tqdm import tqdm
 
 
 # Параметры
-BATCH_SIZE = 32
+BATCH_SIZE = 24
 EPOCHS = 20
 MARGIN = 1.0
 LEARNING_RATE = 1e-3
-DATASET_DIR = 'processed_dataset' # Это будет работать, так как processed_dataset тоже прямая подпапка
+DATASET_DIR = 'processed_dataset/train/' # Это будет работать, так как processed_dataset тоже прямая подпапка
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = 'models/face_model.pth' # Путь для сохранения модели также верен относительно текущего скрипта
 
