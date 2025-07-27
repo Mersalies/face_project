@@ -11,20 +11,28 @@ class TripletFaceDataset(Dataset):
 
     def __init__(self, root_dir, transform = None):
         self.root_dir = root_dir
-        self.transform = transform
+        if transform is None:
+            self.transform = transforms.Compose([
+                transforms.Resize((160, 160)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.5]*3, std=[0.5]*3)
+            ])
+        else:
+            self.transform = transform
 
         #сбор списка папок по людям
         self.people = os.listdir(root_dir)
         self.people = [p for p in self.people if os.path.isdir(os.path.join(root_dir, p))]
 
-        self.image_path = {
-                            person: [
-                                      os.path.join(root_dir,person,img)
-                                      for img in os.listdir(os.path.join(root_dir,person))
-                                    ]
-                            for person in self.people
-                          }
-        
+        self.image_paths = { # Всегда используйте image_paths
+                    person: [
+                              os.path.join(root_dir,person,img)
+                              for img in os.listdir(os.path.join(root_dir,person))
+                            ]
+                    for person in self.people
+                  }
+
+
          # Убираем людей с <2 фото (т.к. нужны минимум anchor+positive)
         self.image_paths = {k: v for k, v in self.image_paths.items() if len(v) >= 2}
         self.people = list(self.image_paths.keys())
