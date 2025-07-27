@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from triplet.triplet_dataset import TripletFaceDataset
 from triplet.loss import TripletLoss
-from models.face_model import FaceModel
+from models.face_model import Face_model
 import os
 from tqdm import tqdm
 
@@ -28,7 +28,7 @@ dataset = TripletFaceDataset(root_dir=DATASET_DIR, transform=transform)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 
 # Модель и оптимизатор
-model = FaceModel(embedding_size=128).to(DEVICE)
+model = Face_model(embedding_size=128).to(DEVICE)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 criterion = TripletLoss(margin=MARGIN)
 
