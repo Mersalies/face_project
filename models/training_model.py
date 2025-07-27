@@ -1,26 +1,31 @@
 import torch
+import os
+
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from triplet.triplet_dataset import TripletFaceDataset
-from triplet.loss import TripletLoss
+
+
+from trip_data import TripletFaceDataset
+from loss import TripletLoss
 from models.face_model import Face_model
-import os
+
 from tqdm import tqdm
+
 
 # Параметры
 BATCH_SIZE = 32
 EPOCHS = 20
 MARGIN = 1.0
 LEARNING_RATE = 1e-3
-DATASET_DIR = 'processed_dataset'
+DATASET_DIR = 'processed_dataset' # Это будет работать, так как processed_dataset тоже прямая подпапка
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MODEL_SAVE_PATH = 'models/face_model.pth'
+MODEL_SAVE_PATH = 'models/face_model.pth' # Путь для сохранения модели также верен относительно текущего скрипта
 
 # Аугментации
 transform = transforms.Compose([
     transforms.Resize((160, 160)),
     transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) # Исправленная нормализация
 ])
 
 # Датасет и DataLoader
@@ -56,7 +61,7 @@ for epoch in range(1, EPOCHS + 1):
     avg_loss = running_loss / len(dataloader)
     print(f"[Epoch {epoch}/{EPOCHS}] Average Loss: {avg_loss:.4f}")
 
-    # Сохраняем модель каждый 5 эпох
+    # Сохраняем модель каждые 5 эпох
     if epoch % 5 == 0:
         torch.save(model.state_dict(), f"models/face_model_epoch_{epoch}.pth")
 
