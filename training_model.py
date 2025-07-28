@@ -7,7 +7,7 @@ from torchvision import transforms
 
 from trip_data import TripletFaceDataset
 from loss import TripletLoss
-from models.model import Face_model
+from model import Face_model
 
 from tqdm import tqdm
 
