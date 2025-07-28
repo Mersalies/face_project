@@ -5,7 +5,7 @@ from torchvision import transforms
 from PIL import Image
 from model import Face_model 
 from obrabotka_face import process_two_faces 
-from camera import take_photo_from_camera_2v #
+from camera import take_photo_from_camera #
 
 
 
@@ -59,7 +59,7 @@ def cosine_distance(emb1, emb2):
 photo_1 = 'my_photo/test/photo_2025-07-29_00-41-53.jpg'
 
 camera_photos_folder = 'my_photo/camera_captures' # Папка для сохранения снимков с камеры
-photo_2_path = take_photo_from_camera_2v(output_folder=camera_photos_folder) # Вызываем функцию для снимка
+photo_2_path = take_photo_from_camera(output_folder=camera_photos_folder) # Вызываем функцию для снимка
 
 processed_dir = 'my_photo/emd' # Папка для обработанных лиц
 
