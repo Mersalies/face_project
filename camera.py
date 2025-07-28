@@ -33,7 +33,7 @@ def take_photo_from_camera(output_folder: str = "camera_photos", file_prefix: st
         print("Ошибка: Не удалось сделать снимок.")
         return None
 
-    # Генерируем имя файла с временной меткой
+    # Генерируем имя файла с времепшенной меткой
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if file_prefix:
         file_name = f"{file_prefix}{timestamp}.jpg"
@@ -47,3 +47,6 @@ def take_photo_from_camera(output_folder: str = "camera_photos", file_prefix: st
     print(f"Фотография сохранена: {file_path}")
 
     return file_path
+
+file_name = 'my_photo'
+take_photo_from_camera(output_folder=file_name)
