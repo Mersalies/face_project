@@ -1,14 +1,4 @@
-import os
-from PIL import Image
-from facenet_pytorch import MTCNN
-from torchvision.transforms.functional import to_pil_image
-from tqdm import tqdm
-
-import torch as th
-
-from processing_face import process_face_dataset
-
-
+from obrabotka_face import process_face_dataset
 
 
 RAW_DIR_TRAIN = "archive/train"                

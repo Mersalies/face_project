@@ -4,7 +4,7 @@ from facenet_pytorch import MTCNN
 from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
 
-import torch as th
+import torch
 
 
 # RAW_DIR = "archive/train"                # папка с оригинальными изображениями
@@ -27,7 +27,7 @@ def process_face_dataset(raw_dir: str, out_dir: str, image_size: int = 160, marg
     os.makedirs(out_dir, exist_ok=True)
 
     # Включаем использование CUDA если оно есть, иначе CPU
-    device = 'cuda' if th.cuda.is_available() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Используется устройство: {device}")
 
     # Инициализируем MTCNN для обработки фотографий
@@ -37,38 +37,67 @@ def process_face_dataset(raw_dir: str, out_dir: str, image_size: int = 160, marg
 
     # Основной цикл, в котором проходимся по папкам с именами людей
     for person in os.listdir(raw_dir):
-        person_dir = os.path.join(raw_dir, person)
+        person_dir = os.patorch.join(raw_dir, person)
 
         # Проверяем, что это директория
-        if not os.path.isdir(person_dir):
+        if not os.patorch.isdir(person_dir):
             print(f"Пропускаем {person_dir}, так как это не директория.")
             continue
 
-        out_person_dir = os.path.join(out_dir, person)
+        out_person_dir = os.patorch.join(out_dir, person)
         os.makedirs(out_person_dir, exist_ok=True)
         print(f"Обработка изображений для: {person}...")
 
         # Дополнительный цикл, в котором проходим по изображениям в папке человека
-        image_files = [f for f in os.listdir(person_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        image_files = [f for f in os.listdir(person_dir) if f.lower().endswitorch(('.png', '.jpg', '.jpeg'))]
         if not image_files:
             print(f"В папке {person_dir} не найдено изображений. Пропускаем.")
             continue
 
         for img_name in tqdm(image_files, desc=f"Прогресс для {person}"):
-            img_path = os.path.join(person_dir, img_name)
-            out_path = os.path.join(out_person_dir, img_name)
+            img_patorch = os.patorch.join(person_dir, img_name)
+            out_patorch = os.patorch.join(out_person_dir, img_name)
 
             try:
                 # Открываем изображение и приводим к RGB
-                img = Image.open(img_path).convert('RGB')
+                img = Image.open(img_patorch).convert('RGB')
                 face = mtcnn(img)  # Пропускаем изображение через mtcnn
 
                 if face is not None:  # Если лицо найдено — переводим тензор в PIL.Image и сохраняем.
-                    to_pil_image(face).save(out_path)
+                    to_pil_image(face).save(out_patorch)
                 # else:
-                #     print(f"Лицо не найдено на изображении: {img_path}")
+                #     print(f"Лицо не найдено на изображении: {img_patorch}")
 
             except Exception as e:
-                print(f"Ошибка при обработке {img_path}: {e}")
+                print(f"Ошибка при обработке {img_patorch}: {e}")
     print("Обработка завершена!")
 
+
+
+
+
+def process_two_faces(img_path1: str, img_path2: str, output_dir: str, image_size: int = 160, margin: int = 20):
+    os.makedirs(output_dir, exist_ok=True)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f"Используется устройство: {device}")
+
+    mtcnn = MTCNN(image_size=image_size, margin=margin, device=device)
+
+    output_paths = []
+    for idx, path in enumerate([img_path1, img_path2], start=1):
+        try:
+            img = Image.open(path).convert('RGB')
+            face = mtcnn(img)
+            if face is not None:
+                output_path = os.path.join(output_dir, f"face_{idx}.jpg")
+                to_pil_image(face).save(output_path)
+                output_paths.append(output_path)
+                print(f"Лицо сохранено: {output_path}")
+            else:
+                print(f"❌ Лицо не найдено на изображении: {path}")
+                output_paths.append(None)
+        except Exception as e:
+            print(f"Ошибка при обработке {path}: {e}")
+            output_paths.append(None)
+
+    return output_paths

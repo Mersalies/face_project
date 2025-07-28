@@ -2,3 +2,5 @@
 archive
 .venv
 processed_dataset
+my_photo
+__pycache__

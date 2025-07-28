@@ -5,8 +5,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 
-from trip_data import TripletFaceDataset
-from loss import TripletLoss
+from training_model.trip_data import TripletFaceDataset
+from training_model.loss import TripletLoss
 from model import Face_model
 
 from tqdm import tqdm
