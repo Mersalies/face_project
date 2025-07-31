@@ -1,10 +1,10 @@
-import os
 from PIL import Image
 from facenet_pytorch import MTCNN
 from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
 
 import torch
+import os
 
 
 # RAW_DIR = "archive/train"                # папка с оригинальными изображениями
@@ -24,7 +24,6 @@ def process_face_dataset(raw_dir: str, out_dir: str, image_size: int = 160, marg
         margin (int): Отступ в пикселях вокруг лица при обрезке. По умолчанию 20.
     """
 
-    
     # Создаём выходную папку, если её нет
     os.makedirs(out_dir, exist_ok=True)
 
@@ -32,50 +31,42 @@ def process_face_dataset(raw_dir: str, out_dir: str, image_size: int = 160, marg
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Используется устройство: {device}")
 
-    # Инициализируем MTCNN для обработки фотографий
-    # На выходе получим обрезанное лицо заданного размера с отступом
+    # Инициализируем MTCNN
     mtcnn = MTCNN(image_size=image_size, margin=margin, device=device)
     print(f"MTCNN инициализирован с image_size={image_size}, margin={margin}.")
 
-    # Основной цикл, в котором проходимся по папкам с именами людей
+    # Проходим по каждой папке (каждый человек)
     for person in os.listdir(raw_dir):
-        person_dir = os.torch.join(raw_dir, person)
+        person_dir = os.path.join(raw_dir, person)
 
-        # Проверяем, что это директория
-        if not os.torch.isdir(person_dir):
+        if not os.path.isdir(person_dir):
             print(f"Пропускаем {person_dir}, так как это не директория.")
             continue
 
-        out_person_dir = os.torch.join(out_dir, person)
+        out_person_dir = os.path.join(out_dir, person)
         os.makedirs(out_person_dir, exist_ok=True)
         print(f"Обработка изображений для: {person}...")
 
-        # Дополнительный цикл, в котором проходим по изображениям в папке человека
-        image_files = [f for f in os.listdir(person_dir) if f.lower().endswitorch(('.png', '.jpg', '.jpeg'))]
+        image_files = [f for f in os.listdir(person_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         if not image_files:
             print(f"В папке {person_dir} не найдено изображений. Пропускаем.")
             continue
 
         for img_name in tqdm(image_files, desc=f"Прогресс для {person}"):
-            img_torch = os.torch.join(person_dir, img_name)
-            out_torch = os.torch.join(out_person_dir, img_name)
+            img_path = os.path.join(person_dir, img_name)
+            out_path = os.path.join(out_person_dir, img_name)
 
             try:
-                # Открываем изображение и приводим к RGB
-                img = Image.open(img_torch).convert('RGB')
-                face = mtcnn(img)  # Пропускаем изображение через mtcnn
+                img = Image.open(img_path).convert('RGB')
+                face = mtcnn(img)
 
-                if face is not None:  # Если лицо найдено — переводим тензор в PIL.Image и сохраняем.
-                    to_pil_image(face).save(out_torch)
-                # else:
-                #     print(f"Лицо не найдено на изображении: {img_torch}")
+                if face is not None:
+                    to_pil_image(face).save(out_path)
 
             except Exception as e:
-                print(f"Ошибка при обработке {img_torch}: {e}")
+                print(f"Ошибка при обработке {img_path}: {e}")
+
     print("Обработка завершена!")
-
-
-
 
 
 def process_two_faces(img_path1: str, img_path2: str, output_dir: str, image_size: int = 160, margin: int = 20):
