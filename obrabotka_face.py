@@ -1,15 +1,42 @@
+import os
+import cv2
+import torch
+
 from PIL import Image
-from facenet_pytorch import MTCNN
-from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
 
-import torch
-import os
+from torchvision import transforms
+from facenet_pytorch import MTCNN
+from torchvision.transforms.functional import to_pil_image
+
+from model import Face_model  # Убедись, что путь корректный
+
+
+
+
+# Устройство: CUDA или CPU
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
+# Инициализируем MTCNN
+mtcnn = MTCNN(image_size=160, margin=20, device=device)
+
+
+# Загружаем твою модель
+model = Face_model(embedding_size=128).to(device)
+model.eval()
+
+
+
+
+
+
+
+#                              ==== Обработка датасета ====
 
 
 # RAW_DIR = "archive/train"                # папка с оригинальными изображениями
 # OUT_DIR = "processed_dataset/train"      # папка с обработаными изображениями
-
 def process_face_dataset(raw_dir: str, out_dir: str, image_size: int = 160, margin: int = 20):
     """
     Обрабатывает набор фотографий лиц, находя лица, обрезает их
@@ -69,65 +96,74 @@ def process_face_dataset(raw_dir: str, out_dir: str, image_size: int = 160, marg
     print("Обработка завершена!")
 
 
-def process_two_faces(img_path1: str, img_path2: str, output_dir: str, image_size: int = 160, margin: int = 20) -> List[Optional[str]]:
-    """
-    Извлекает и сохраняет лица с двух предоставленных изображений.
 
-    Эта функция использует MTCNN для обнаружения лиц на двух изображениях, 
-    изменяет их размер до 160x160 пикселей (стандартный размер для многих моделей
-    распознавания лиц, таких как FaceNet) и сохраняет их в указанной директории.
-    Если лицо не найдено или произошла ошибка, соответствующий элемент в списке
-    результатов будет равен None.
+
+
+
+
+#                            ==== Обработка фотографии в эмбеддинг ====
+
+def get_face_embedding(img: Image.Image) -> torch.Tensor:
+    """
+    Получает эмбеддинг лица из PIL-изображения.
 
     Args:
-        img_path1 (str): Путь к первому файлу изображения.
-        img_path2 (str): Путь ко второму файлу изображения.
-        output_dir (str): Путь к директории для сохранения обработанных лиц.
-        image_size (int): Размер (сторона квадрата) для сохранения лица в пикселях. 
-                          По умолчанию 160.
-        margin (int): Отступ в пикселях вокруг найденного лица. По умолчанию 20.
+        img (PIL.Image): Изображение.
 
     Returns:
-        List[Optional[str]]: Список, содержащий пути к сохраненным файлам лиц.
-                           Каждый элемент списка - это путь к файлу или None, 
-                           если лицо не было найдено.
+        torch.Tensor: Эмбеддинг размерности (1, 128) или None, если лицо не найдено.
     """
-    # Создаем выходную директорию, если она не существует
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Определяем доступное устройство для ускорения обработки (GPU/CPU)
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f"Используется устройство: {device}")
 
-    # Инициализируем детектор лиц MTCNN с заданными параметрами
-    # MTCNN (Multi-task Cascaded Convolutional Networks) - это эффективный
-    # фреймворк для обнаружения лиц.
-    mtcnn = MTCNN(image_size=image_size, margin=margin, device=device)
 
-    output_paths = []
-    # Итерируемся по двум путям к изображениям для последовательной обработки
-    for idx, path in enumerate([img_path1, img_path2], start=1):
-        try:
-            # Загружаем изображение и конвертируем его в формат RGB
-            img = Image.open(path).convert('RGB')
-            
-            # Обнаруживаем лицо на изображении.
-            # Если лицо найдено, `mtcnn` вернет тензор, представляющий обрезанное лицо.
-            face = mtcnn(img)
-            if face is not None:
-                # Генерируем уникальное имя файла для сохранения
-                output_path = os.path.join(output_dir, f"face_{idx}.jpg")
-                
-                # Конвертируем тензор лица обратно в изображение PIL и сохраняем его
-                to_pil_image(face).save(output_path)
-                output_paths.append(output_path)
-                print(f"Лицо успешно сохранено: {output_path}")
-            else:
-                print(f"❌ Лицо не найдено на изображении: {path}")
-                output_paths.append(None)
-        except Exception as e:
-            # Обработка возможных ошибок, таких как поврежденный файл или некорректный путь
-            print(f"❌ Ошибка при обработке изображения {path}: {e}")
-            output_paths.append(None)
+    # Извлечение лица
+    face = mtcnn(img)
+    if face is None:
+        print("❌ Лицо не найдено.")
+        return None
 
-    return output_paths
+    # Приведение к формату батча
+    face = face.unsqueeze(0).to(device)
+
+    # Прогон через модель
+    with torch.no_grad():
+        embedding = model(face)
+
+    return embedding  # torch.Size([1, 128])
+
+
+
+
+#                       ==== Обработанные фотографии в эмбеддинг ====
+
+def generation_embedding(raw_dir: str, out_dir: str, embedding_size: int = 128):
+    """
+    Обрабатывает все изображения в папке и сохраняет эмбеддинги.
+
+    Args:
+        input_dir (str): Путь к папке с лицами (160x160, RGB).
+        output_dir (str): Куда сохранить эмбеддинги.
+        embedding_size (int): Размер эмбеддинга, по умолчанию 128.
+    """
+
+
+
+    os.makedirs(out_dir, exist_ok=True)
+    transform = transforms.ToTensor()
+
+
+    for filename in os.listdir(raw_dir):
+        if not filename.lower().endswith((".jpg", ".jpeg", ".png")):
+            continue
+
+        image_path = os.path.join(raw_dir, filename)
+        image = Image.open(image_path).convert("RGB")
+        tensor = transform(image).unsqueeze(0).to(device)
+
+        with torch.no_grad():
+            embedding = model(tensor)
+
+        name, _ = os.path.splitext(filename)
+        save_path = os.path.join(out_dir, f"{name}.pt")
+        torch.save(embedding.cpu(), save_path)
+
+        print(f"✅ Эмбеддинг сохранён: {save_path}")
