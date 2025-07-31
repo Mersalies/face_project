@@ -1,7 +1,8 @@
 import cv2
 import os
-from datetime import datetime
+from PIL import Image 
 
+from datetime import datetime
 
 
 def take_photo():
@@ -23,7 +24,10 @@ def take_photo():
         print("Ошибка: Не удалось сделать снимок.")
         return None
 
-    return photo
+     #Конвертация из BGR (OpenCV) в RGB (PIL)
+    frame_rgb = cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(frame_rgb)
+    return img
 
 
 
