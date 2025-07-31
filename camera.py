@@ -4,7 +4,30 @@ from datetime import datetime
 
 
 
-def take_photo_from_camera(output_folder: str = "camera_photos", file_prefix: str = ""):
+def take_photo():
+    """
+    Делаем снимок экрана и возрощаем текущую фотографию
+    """
+
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened() :
+        print("Ошибка: Камера не найдена или не может быть открыта.")
+        return 
+
+
+    success, photo = cap.read() # Читаем кадр из камеры
+    cap.release() # Освобождаем ресурсы камеры
+
+    if not success:
+        print("Ошибка: Не удалось сделать снимок.")
+        return None
+
+    return photo
+
+
+
+def take_photo_and_save_photo_to_dir(output_folder: str = "camera_photos", file_prefix: str = "")->str:
     """
     Делает фотографию с веб-камеры и сохраняет ее в указанную папку.
 
@@ -19,13 +42,13 @@ def take_photo_from_camera(output_folder: str = "camera_photos", file_prefix: st
         str or None: Полный путь к сохраненному файлу фотографии, если снимок сделан успешно,
                      иначе None.
     """
-    os.makedirs(output_folder, exist_ok=True) # Создаем выходную папку, если ее нет
 
-    cap = cv2.VideoCapture(0) # Инициализируем захват видео с камеры (0 - обычно основная камера)
 
-    if not cap.isOpened():
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened() :
         print("Ошибка: Камера не найдена или не может быть открыта.")
-        return None
+        return 
+
 
     success, photo = cap.read() # Читаем кадр из камеры
     cap.release() # Освобождаем ресурсы камеры
@@ -33,6 +56,7 @@ def take_photo_from_camera(output_folder: str = "camera_photos", file_prefix: st
     if not success:
         print("Ошибка: Не удалось сделать снимок.")
         return None
+
 
     # Генерируем имя файла с временной меткой
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
