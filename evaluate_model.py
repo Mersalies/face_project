@@ -1,31 +1,26 @@
+import time
+from tqdm import tqdm
+import numpy as np
+
 import torch
 import torch.nn.functional as F
-import os
-from torchvision import datasets, transforms
+from torchvision import datasets
 from torch.utils.data import DataLoader
-from model import Face_model
+
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
-import numpy as np
-from tqdm import tqdm
-import time
 
-# === Настройки ===
-VAL_DIR = 'processed_dataset/val'
-MODEL_PATH = 'face_model.pth'
-BATCH_SIZE = 32
+
+from model import Face_model
+#                       --- импорт настроект ----
+from setting import transform, BATCH_SIZE, VAL_DIR,  EMBEDDING_SIZE, MODEL_PATH
+
+#                       === Настройки ===
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EMBEDDING_SIZE = 128
 
 # === Параметры для семплирования ===
 MAX_ROC_PAIRS = 15_000_000
 
-# === Трансформации ===
-transform = transforms.Compose([
-    transforms.Resize((160, 160)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
-])
 
 # === Загрузка валидационного датасета ===
 print(f"Загрузка датасета из: {VAL_DIR}")
