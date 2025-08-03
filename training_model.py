@@ -1,48 +1,50 @@
+# train.py
+
 import torch
 import os
-
 from torch.utils.data import DataLoader
 from torchvision import transforms
-
-
-from training_model.trip_data import TripletFaceDataset
-from training_model.loss import TripletLoss
-from model import Face_model
-
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
+from trip_data import TripletFaceDataset
+from loss import TripletLoss
+from model import StrongerFaceModel
 
-# Параметры
+# === Параметры ===
 BATCH_SIZE = 24
 EPOCHS = 20
 MARGIN = 1.0
 LEARNING_RATE = 1e-3
-DATASET_DIR = 'processed_dataset/train/' # Это будет работать, так как processed_dataset тоже прямая подпапка
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MODEL_SAVE_PATH = 'models/face_model.pth' # Путь для сохранения модели также верен относительно текущего скрипта
+DATASET_DIR = 'processed_dataset/train/'
+MODEL_SAVE_PATH = 'models/face_model.pth'
 
-# Аугментации
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# === Аугментации ===
 transform = transforms.Compose([
     transforms.Resize((160, 160)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]) # Исправленная нормализация
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
-# Датасет и DataLoader
+# === Датасет и DataLoader ===
 dataset = TripletFaceDataset(root_dir=DATASET_DIR, transform=transform)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 
-# Модель и оптимизатор
-model = Face_model(embedding_size=128).to(DEVICE)
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+# === Модель, функция потерь, оптимизатор ===
+model = StrongerFaceModel(embedding_size=128).to(DEVICE)
 criterion = TripletLoss(margin=MARGIN)
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-# Цикл обучения
+# === Тренировка ===
+loss_history = []
+
 for epoch in range(1, EPOCHS + 1):
     model.train()
     running_loss = 0.0
     loop = tqdm(enumerate(dataloader), total=len(dataloader), desc=f"Epoch {epoch}/{EPOCHS}")
-    
+
     for i, (anchor, positive, negative) in loop:
         anchor, positive, negative = anchor.to(DEVICE), positive.to(DEVICE), negative.to(DEVICE)
 
@@ -59,12 +61,23 @@ for epoch in range(1, EPOCHS + 1):
         loop.set_postfix(loss=loss.item())
 
     avg_loss = running_loss / len(dataloader)
-    print(f"[Epoch {epoch}/{EPOCHS}] Average Loss: {avg_loss:.4f}")
+    loss_history.append(avg_loss)
+    print(f"[Epoch {epoch}] Average Loss: {avg_loss:.4f}")
 
-    # Сохраняем модель каждые 5 эпох
+    # Сохраняем каждые 5 эпох
     if epoch % 5 == 0:
         torch.save(model.state_dict(), f"models/face_model_epoch_{epoch}.pth")
 
-# Финальное сохранение модели
+# === Финальное сохранение ===
 torch.save(model.state_dict(), MODEL_SAVE_PATH)
 print(f"Тренировка завершена. Модель сохранена в {MODEL_SAVE_PATH}")
+
+# === Визуализация потерь ===
+plt.figure(figsize=(10, 5))
+plt.plot(range(1, EPOCHS + 1), loss_history, marker='o')
+plt.title("Training Loss per Epoch")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.grid(True)
+plt.savefig("training_loss.png")
+plt.show()

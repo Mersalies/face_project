@@ -12,19 +12,6 @@ class TripletFaceDataset(Dataset):
     для обучения моделей, использующих триплетную функцию потерь (Triplet Loss).
     Он генерирует триплеты (anchor, positive, negative) изображений "на лету".
 
-    
-    
-    Структура директорий:
-
-    root_dir/
-    ├── person_A/
-    │   ├── img_001.jpg
-    │   ├── img_002.png
-    │   └── ...
-    ├── person_B/
-    │   ├── img_001.jpg
-    │   └── ...
-    └── ...
     """
 
     def __init__(self, root_dir, transform=None):

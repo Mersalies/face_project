@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from trip_data import TripletFaceDataset
 from loss import TripletLoss
-from model import Face_model
+from model import StrongerFaceModel
 import os
 
 # === Параметры ===
@@ -30,7 +30,7 @@ train_dataset = TripletFaceDataset(dataset_path, transform=transform)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 # === Модель и оптимизатор ===
-model = Face_model().to(device)
+model = StrongerFaceModel().to(device)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.train()
 
