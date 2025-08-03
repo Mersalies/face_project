@@ -75,3 +75,7 @@ def take_photo_and_save_photo_to_dir(output_folder: str = "camera_photos", file_
     print(f"Фотография сохранена: {file_path}")
 
     return file_path
+
+
+
+take_photo_and_save_photo_to_dir(output_folder='photo')
