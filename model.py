@@ -1,40 +1,57 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, stride, 1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, 1, 1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
 
-class Face_model(nn.Module):
+        self.skip = nn.Sequential()
+        if in_channels != out_channels or stride != 1:
+            self.skip = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 1, stride),
+                nn.BatchNorm2d(out_channels)
+            )
 
-    def __init__(self, embedding_size = 128):
-        super(Face_model, self).__init__()
+    def forward(self, x):
+        identity = self.skip(x)
+        out = self.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += identity
+        return self.relu(out)
 
-        self.convnet = nn.Sequential(
+class StrongerFaceModel(nn.Module):
+    def __init__(self, embedding_size=128):
+        super().__init__()
 
-            nn.Conv2d(3,64,7, stride=2, padding=3),
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 64, 7, stride=2, padding=3),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.MaxPool2d(3,2,1),
-            nn.Conv2d(64,128,3,1,1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.MaxPool2d(3,2,1),
-            nn.Conv2d(128,256,3,1,1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.AdaptiveAvgPool2d((1,1))
-
+            nn.MaxPool2d(3, stride=2, padding=1)
         )
-        self.embedding = nn.Linear(256, embedding_size)
 
+        self.layer2 = ResidualBlock(64, 128, stride=2)
+        self.layer3 = ResidualBlock(128, 256, stride=2)
+        self.layer4 = ResidualBlock(256, 512, stride=2)
 
-    def forward(self,x):
-        
-        x = self.convnet(x)
-        x = x.view(x.size(0),-1)
-        x = self.embedding(x)
+        self.pool = nn.AdaptiveAvgPool2d((1,1))
+        self.fc = nn.Linear(512, embedding_size)
 
-        return F.normalize(x,p=2,dim=1)
-
-
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.pool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+        return F.normalize(x, p=2, dim=1)
 
 
 
