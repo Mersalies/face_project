@@ -30,7 +30,7 @@ def compare_with_folder(embedding, embeddings_folder, threshold=0.5):
     matched = False
     print(device)
 
-
+    count = 0
     for file in os.listdir(embeddings_folder):
         if file.endswith('.pt'):
             emb_path = os.path.join(embeddings_folder, file)
@@ -38,15 +38,21 @@ def compare_with_folder(embedding, embeddings_folder, threshold=0.5):
 
             distance = l2_distance(embedding, emb2)
 
-            print(f"Файл: {file} | Расстояние: {distance:.4f}")
+            # print(f"Файл: {file} | Расстояние: {distance:.4f}")
             if distance < threshold:
-                print("✅ Это вы (совпадение)")
+                count += 1
+                # print("✅ Это вы (совпадение)")
                 matched = True
-            else:
-                print("❌ Это не вы (не совпадает)")
+            # else:
+                # print("❌ Это не вы (не совпадает)")
 
-    if not matched:
+
+    if count >= 5:
+        print("✅ Это вы (совпадение)")
+    else:
+    # if not matched:
         print("⛔ Совпадений не найдено.")
+    
 
 
 compare_with_folder(embedding=emd,embeddings_folder=emd_dir)
